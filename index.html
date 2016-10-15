@@ -9,7 +9,7 @@
     </head>
     <body>      
         <div id="container">
-            <h1><img src="meteor.png" alt="meteor">Meteorite Landings Map</h1>                        
+            <h1><img src="https://rawgit.com/kurumkan/geomapping/master/meteor.png" alt="meteor">Meteorite Landings Map</h1>                        
             <div id="map">
             </div>
             <div id="tooltip" class="hidden">                            
@@ -40,10 +40,10 @@
                 .attr("height", h);              
           
           //load meteorite data
-          d3.json("https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/meteorite-strike-data.json", function(data) {           
+          d3.json("https://rawgit.com/kurumkan/geomapping/master/meteorite-strike-data.json", function(data) {           
 
             //Load in GeoJSON data
-            d3.json("output.json", function(json) {
+            d3.json("https://rawgit.com/kurumkan/geomapping/master/output.json", function(json) {
               //Bind data and create one path per GeoJSON feature         
               var paths = svg.selectAll("path")
                  .data(json.features)
