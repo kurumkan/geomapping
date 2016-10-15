@@ -3,54 +3,43 @@ body{
     font-family: 'Roboto Slab', serif;
     font-size:14px;
     line-height: 14px;
-    background: #ecf0f1;
-    color: #4d5a6d;
+    background: #000;
+    color: #fff;
 }
-
 #container{
-	width: 1200px;
+	width: 960px;
 	margin: 20px auto;
-	background: white;	
-	padding: 20px;
-	-moz-box-shadow:    3px 3px 5px 6px #ccc;
-  	-webkit-box-shadow: 3px 3px 5px 6px #ccc;
-  	box-shadow:         3px 3px 5px 6px #ccc;
+	background: black;	
+	padding-top: 5px;
 }
-
-rect.bordered {
-  stroke: #E6E6E6;  
-  stroke-width:1px;   
+h1{
+    font-size: 32px;   
 }
-
-.important{
-	font-weight: bold;
-}
-
 .hidden{
     display: none;
 }
 #tooltip{
-    font-size: 16px;
-    color:#020916;
+    font-size: 16px;    
     position: absolute;
-    width: 100px;
+    width: 180px;
     height: auto;
-    padding: 5px;        
-    -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-    -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);        
-    background: white;
+    padding: 10px;        
+    -webkit-box-shadow: 0 8px 6px -6px #ccc;
+       -moz-box-shadow: 0 8px 6px -6px #ccc;
+            box-shadow: 0 8px 6px -6px #ccc;
+    background: #222;
+    color:#fff;    
+    text-align: left;
+    opacity: 0.7;
+    line-height: 20px;
+}
+.label{
+    font-weight: bold;
+}
+svg{
+    margin-top: 20px;
+}
+svg path{    
+  stroke: #000;      
 }
 
-svg .axis path,
-svg .axis line {
-    fill: none;
-    stroke: #4d5a6d;  
-    shape-rendering: crispEdges;    
-}
-
-svg text, svg .axis text {
-    font-family: sans-serif;
-    font-size: 12px;
-    fill:#4d5a6d;  
-}

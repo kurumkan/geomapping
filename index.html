@@ -3,151 +3,119 @@
     <head>
         <meta charset="utf-8">
         <title>D3 Page Template</title>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.6/d3.min.js"></script>        
+        <script type="text/javascript" src="d3.v3.js"></script>        
         <link href="https://fonts.googleapis.com/css?family=Roboto+Slab" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="style.css">        
     </head>
     <body>      
         <div id="container">
-            <h1>Monthly Global Land-Surface Temperature</h1>
-            <h3>1753 - 2015</h3>
-            <p>Temperatures are in Celsius and reported as anomalies relative to the Jan 1951-Dec 1980 average.</p>
-            <p>Estimated Jan 1951-Dec 1980 absolute temperature ℃: 8.66 +/- 0.07</p>
-            <div id="heatmap">
+            <h1><img src="meteor.png" alt="meteor">Meteorite Landings Map</h1>                        
+            <div id="map">
             </div>
-            <div id="tooltip" class="hidden">                
-                <div id="date" class="important"></div>
-                <div id="temperature" class="important"></div>
-                <div id="variance"></div>
+            <div id="tooltip" class="hidden">                            
+              <div><span class="label">Name: </span><span id="name"></span></div>
+              <div><span class="label">Mass: </span><span id="mass"></span> gram</div>
+              <div><span class="label">Date: </span><span id="date"></span></div>              
             </div>
         </div>
-        <script type="text/javascript">
-            d3.json("https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/global-temperature.json", function(json) {                
-                var dataset = json;                  
-                update(dataset);                 
+        <script type="text/javascript">           
+          //Width and height
+          var w = 960;
+          var h = 680;
+
+          //Define map projection          
+          //making scale smaller. The default scale value is 1000.
+          var projection = d3.geo.mercator()
+                       .translate([w/2, h/1.5])
+                       .scale([950]);
+          
+          //Define default path generator
+          //path translates GeoJson into svg path
+          var path = d3.geo.path().projection(projection);          
+
+          //Create SVG element      
+          var svg = d3.select("#map")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);              
+          
+          //load meteorite data
+          d3.json("https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/meteorite-strike-data.json", function(data) {           
+
+            //Load in GeoJSON data
+            d3.json("output.json", function(json) {
+              //Bind data and create one path per GeoJSON feature         
+              var paths = svg.selectAll("path")
+                 .data(json.features)
+                 .enter()
+                 .append("path")
+                 .attr("d", path)
+                 .style("fill", "#2E2543");
+              
+              //this array will store each meteorites data     
+              var meteorData = data.features.filter(function(d){return d.geometry});                            
+              //the power value. We use Math.pow(Meteorite Weight , power) to make difference between
+              //meteorites weights a bit smaller
+              var power=0.3; 
+              //max and min meteorites weight (with power)
+              var min = Math.pow(d3.min(meteorData, function(d){return parseFloat(d.properties.mass);}),power);
+              var max = Math.pow(d3.max(meteorData, function(d){return parseFloat(d.properties.mass);}),power);
+          
+              //Define quantize scale to sort data values into buckets of color
+              var color = d3.scale.quantize()                    
+                        .domain([min,max])
+                        .range(["#810101","#EF3F11","#fb6742","#FF8666","#D09D58","#f8cb8f", "#fdefd8"]);
+              //to scale meteorite weigth into circles radius
+              var weightScale = d3.scale.linear()
+                    .domain([min, max])  
+                    .range([1,45]);    
+              
+              var dateFormat = d3.time.format("%Y-%b-%d");
+              
+              //draw circles representing meteorites
+              svg.selectAll("circle")
+                 .data(meteorData)
+                 .enter()
+                 .append("circle")
+                 .attr("cx", function(d) {                    
+                    //getting screen x coordinates from lat and lon
+                    return projection([parseFloat(d.geometry.coordinates[0]), parseFloat(d.geometry.coordinates[1])])[0];
+                 })
+                 .attr("cy", function(d) {
+                    //getting screen y coordinates from lat and lon
+                    return projection([parseFloat(d.geometry.coordinates[0]), parseFloat(d.geometry.coordinates[1])])[1];
+                 })              
+                 .attr("r", function(d){                    
+                    return weightScale(parseFloat(Math.pow(d.properties.mass,power)));
+                  })
+                 .style("fill", function(d){ return color(parseFloat(Math.pow(d.properties.mass,power)))})
+                 .style("stroke", "#ae0001")
+                 .style("opacity", 0.55)
+                 .on("mouseover", function(d){
+                    d3.select("#name")
+                    .text(d.properties.name);          
+
+                    d3.select("#mass")
+                    .text(d.properties.mass);          
+ 
+ 
+                    d3.select("#date")
+                    .text(dateFormat(new Date(d.properties.year)));          
+
+                    var xPosition = parseFloat(d3.select(this).attr("cx"))+70;
+                    var yPosition = parseFloat(d3.select(this).attr("cy"))+30;                                            
+                              
+                    //Show the tooltip
+                    d3.select("#tooltip").classed("hidden", false)
+                          .style("left", xPosition + "px")
+                          .style("top", yPosition + "px");
+                  }) 
+                  .on("mouseout", function(d){                                                  
+                      //hide the tooltip    
+                      d3.select("#tooltip").classed("hidden", true);    
+                  })                       
             });
-            //draw the heatmap based on dataset 
-            function update(dataset){                
-                var baseTemperature = dataset.baseTemperature;
-                var array = dataset.monthlyVariance;                
-
-                var margin = { top: 0, right: 5, bottom: 70, left: 40 },
-                width = 1200 - margin.left - margin.right,
-                height = 490 - margin.top - margin.bottom,
-                //sizes of each grid
-                gridWidth = 4.42;
-                gridHeight = Math.floor(height / 12),
-                legendElementWidth = 50,                
-                //the first color array
-                //colors = ["#8a020c","#ff2f45","#ff9996","#ffcbd0","#faffff","#c8ceff","#979cff","#3668ff","#000098" ],
-                //the second color array
-                colors = [ "#030388", "#0000f0", "#0049ff", "#00b4ff", "#25ffd1", "#78ff7e", "#cdff28", "#ffc800", "#ff6600", "#f50a00" , "#880000"]
-                buckets = colors.length,
-                months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                
-                //create an svg element
-                var svg = d3.select("#heatmap").append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-                
-                //add month labels to the left side
-                var monthLabels = svg.selectAll(".monthLabel")
-                .data(months)
-                .enter().append("text")
-                .text(function (d) { return d; })
-                .attr("x", 0)
-                .attr("y", function (d, i) { return i * gridHeight; })
-                .style("text-anchor", "end")
-                .attr("transform", "translate(-8," + gridHeight / 1.5 + ")");
-                
-                //min and max temperatures
-                var minTemp = d3.min(array, function (d) { return baseTemperature+d.variance; });
-                var maxTemp = d3.max(array, function (d) { return baseTemperature+d.variance; });
-                
-                //colorScale is used to transorm a number into color (1 -> #030388)
-                var colorScale = d3.scaleQuantile()
-                    .domain([minTemp, maxTemp])
-                    .range(colors);
-                
-                //year scale
-                var xScale = d3.scaleTime()
-                        .domain([d3.min(array, function (d) { return createDate(d.year);}), 
-                            d3.max(array, function (d) { return createDate(d.year);})])
-                        .range([0, width]);                            
-
-                // define the x axis                              
-                var xAxis = d3.axisBottom()                        
-                        .scale(xScale)
-                        .tickFormat(d3.timeFormat("%Y"));                            
-                 // draw x axis with labels and move to the bottom of the chart area
-                svg.append("g")
-                    .attr("class", "axis")   // give it a class so it can be used to select only xaxis labels  below
-                    .attr("transform", "translate(0," + (height ) + ")")
-                    .call(xAxis);
-
-                //add the grids
-                var cards = svg.selectAll(".hour")
-                    .data(array, function(d) {return d.variance;});
-    
-                cards.enter().append("rect")
-                        .attr("x", function(d) {return xScale(createDate(d.year))})
-                        .attr("y", function(d) { return (d.month - 1) * gridHeight; })                        
-                        .attr("class", "hour bordered")
-                        .attr("width", gridWidth)
-                        .attr("height", gridHeight)
-                        .style("fill", function(d){return colorScale(baseTemperature+d.variance)})
-                        .on("mouseover", function(d){                            
-                            //Update the tooltip position and value                        
-                            d3.select("#date")
-                            .text(d.year+" - "+months[d.month-1]);
-
-                            d3.select("#temperature")
-                            .text((baseTemperature+d.variance).toFixed(3)+" \u2103");
-
-                            d3.select("#variance")
-                            .text((d.variance>0?"+":"")+d.variance);
-                            
-                            var xPosition = parseFloat(d3.select(this).attr("x"))+10;
-                            var yPosition = parseFloat(d3.select(this).attr("y"))+130;                        
-                            //Show the tooltip
-                            d3.select("#tooltip")
-                            .classed("hidden", false)
-                            .style("left", xPosition + "px")
-                            .style("top", yPosition + "px");
-                        })        
-                        .on("mouseout", function(d){                            
-                            //hide the tooltip    
-                            d3.select("#tooltip").classed("hidden", true);    
-                        });
-
-                //add the legend         
-                var legend = svg.selectAll("rect")                                                
-                        .data([minTemp].concat(colorScale.quantiles()), function(d) { return d; })
-                        .enter()
-                        .append("rect")
-                        .attr("x", function(d, i){return 290+(legendElementWidth+1)*i;})
-                        .attr("y", height+30)
-                        .attr("width", legendElementWidth)
-                        .attr("height", gridHeight/2)
-                        .attr("stroke", "#ccc")
-                        .attr("fill", function(d){return colorScale(d);});
-                var legendText = svg.selectAll("text")
-                        .data([0].concat(colorScale.quantiles()), function(d) { return d; })                        
-                        .enter()
-                        .append("text")                                
-                        .attr("x", function(d, i){return 290+legendElementWidth/4+(legendElementWidth)*i;})
-                        .attr("y",  height+65)
-                        .attr("fill", "#333")
-                        .text(function(d) {return "≥ " +  Math.round(d*10)/10; });               
-                
-            }
-
-            //this function will return Date object
-            function createDate(year){
-                return new Date(year+" 1 1");
-            }            
+          });          
         </script>
     </body>
 </html>
