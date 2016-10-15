@@ -1,5 +1,5 @@
-#D3 js Heatmap
+#D3 js Geomapping
 
-Monthly Global Land-Surface Temperature
+Meteorite Landings Map
 
-See the <a href="http://codepen.io/pbweb/full/ozyLOd/" target="_blank">demo</a>.
+See the <a href="http://codepen.io/pbweb/full/RGBOLq/" target="_blank">demo</a>.
