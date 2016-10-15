@@ -50,4 +50,6 @@ svg{
 svg path{    
   stroke: #000;      
 }
-
+svg circle{
+    cursor: pointer;
+}
